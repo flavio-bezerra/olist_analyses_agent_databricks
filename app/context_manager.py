@@ -1,6 +1,7 @@
 class ContextManager:
     def __init__(self, spark):
         self.spark = spark
+        print("[ContextManager] Inicializado com sucesso! (Versão Pandas-Safe)")
         # Mapping roles to their allowed domains
         # Using "olist_dataset" catalog prefix if available
         self.role_domains = {
