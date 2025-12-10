@@ -22,40 +22,40 @@ class Orchestrator:
         self.coo_agent = Agent("COO", "coo", self.context_manager, tool=None) # COO has no SQL access
 
     def run_pipeline(self):
-        print("\n=== STARTING AGENT PIPELINE ===\n")
+        print("\n=== INICIANDO PIPELINE DE AGENTES ===\n")
 
         # Step 1: Logistics Agent (Diagnostic)
-        print(">> Step 1: Logistics Diagnostic")
-        logistics_task = "Analyze the delivery performance. Identify main causes for delays in the most recent orders."
+        print(">> Passo 1: Diagnóstico Logístico")
+        logistics_task = "Analise a performance de entrega. Identifique as principais causas de atraso nos pedidos mais recentes."
         logistics_report = self.logistics_agent.run(logistics_task)
-        print(f"\n[Logistics Report Generated]\n{logistics_report[:200]}...\n")
+        print(f"\n[Relatório Logístico Gerado]\n{logistics_report[:200]}...\n")
 
         # Step 2: Finance Agent (Impact)
-        print(">> Step 2: Financial Impact Analysis")
+        print(">> Passo 2: Análise de Impacto Financeiro")
         finance_task = f"""
-        Based on the following logistics problems identified:
+        Com base nos problemas logísticos identificados abaixo:
         '{logistics_report}'
         
-        Calculate the financial volume involved in these delayed orders and potential revenue risk.
-        To do this, you can query the payments and orders data.
+        Calcule o volume financeiro envolvido nesses pedidos atrasados e o risco potencial de receita.
+        Para isso, consulte os dados de pagamentos e pedidos.
         """
         finance_report = self.finance_agent.run(finance_task)
-        print(f"\n[Finance Report Generated]\n{finance_report[:200]}...\n")
+        print(f"\n[Relatório Financeiro Gerado]\n{finance_report[:200]}...\n")
 
         # Step 3: COO (Strategy)
-        print(">> Step 3: Strategic Synthesis (COO)")
+        print(">> Passo 3: Síntese Estratégica (COO)")
         coo_task = f"""
-        Review the technical findings below and propose a high-level strategic action plan in 'Business English' (or Corporate Portuguese).
+        Revise os achados técnicos abaixo e proponha um plano de ação estratégico de alto nível em Português Corporativo.
         
-        Logistics Findings:
+        Achados Logísticos:
         {logistics_report}
         
-        Financial Impact:
+        Impacto Financeiro:
         {finance_report}
         """
         final_plan = self.coo_agent.run(coo_task)
         
-        print("\n=== FINAL STRATEGIC PLAN ===\n")
+        print("\n=== PLANO ESTRATÉGICO FINAL ===\n")
         print(final_plan)
         return final_plan
 
