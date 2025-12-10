@@ -71,6 +71,3 @@ class DataEngine:
                         print(f"  Error loading {table_name}: {e}")
                 else:
                     print(f"  Warning: File {file_path} not found. Skipping table.")
-
-    def get_spark_session(self):
-        return self.spark
