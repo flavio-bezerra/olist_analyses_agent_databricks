@@ -11,10 +11,16 @@ Este projeto implementa uma arquitetura de Agentes de Dados utilizando Spark/Dat
 
 ## Configuração
 
-1. **Dependências:**
-   Instale as dependências necessárias.
+1. **Ambiente (Recomendado):**
+   Crie um ambiente Conda estável usando o arquivo `environment.yml` fornecido:
    ```bash
-   pip install pyspark pandas databricks-langchain langchain-core
+   conda env create -f environment.yml
+   conda activate olist_agent_env
+   ```
+   
+   Ou instale via pip:
+   ```bash
+   pip install pyspark==3.5.0 pandas==2.1.4 databricks-langchain==0.1.0 langchain-core==0.1.52 kagglehub==0.2.4
    ```
    *Nota: Java 8/11 é necessário para o PySpark.*
 
