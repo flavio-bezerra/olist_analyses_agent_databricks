@@ -34,9 +34,12 @@ class SparkSQLTool:
             return f"ERROR: An unexpected error occurred: {str(e)}"
 
     def _sanitize_query(self, query):
-        """Removes markdown code blocks and extra whitespace."""
+        """Removes markdown code blocks, extra whitespace, and trailing semicolons."""
         query = re.sub(r"```sql", "", query, flags=re.IGNORECASE)
         query = query.replace("```", "").strip()
+        # Remove trailing semicolon if present, as it breaks spark.sql when we append LIMIT
+        if query.endswith(";"):
+            query = query[:-1].strip()
         return query
 
     def _enforce_limit(self, query, default_limit=10):
