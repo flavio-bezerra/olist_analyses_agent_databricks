@@ -21,14 +21,15 @@ class ContextManager:
         for domain in domains:
             try:
                 # User verified syntax: spark.sql("SHOW TABLES IN olist_dataset.olist_cx")
-                # Our 'domain' variable already contains 'olist_dataset.olist_finance' etc from role_domains
+                # Using toPandas() to avoid socket errors with .collect()
                 print(f"Loading schema for domain: {domain}")
-                tables_df = self.spark.sql(f"SHOW TABLES IN {domain}")
-                tables = tables_df.collect() 
+                tables_df = self.spark.sql(f"SHOW TABLES IN {domain}").limit(100)
+                # Converting to pandas to avoid socket issues seen with .collect() in some setups
+                pdf_tables = tables_df.toPandas()
                 
-                for table in tables:
+                for index, row in pdf_tables.iterrows():
                     # columns usually: database, tableName, isTemporary
-                    t_name = table['tableName']
+                    t_name = row['tableName']
                     # Construct full qualified name: olist_dataset.olist_finance.table_name
                     full_table_name = f"{domain}.{t_name}"
                     
@@ -36,9 +37,9 @@ class ContextManager:
                     
                     # Describe
                     columns_df = self.spark.sql(f"DESCRIBE {full_table_name}")
-                    columns = columns_df.collect()
+                    pdf_columns = columns_df.toPandas()
                     
-                    for col in columns:
+                    for idx, col in pdf_columns.iterrows():
                         col_name = col['col_name']
                         data_type = col['data_type']
                         context_str += f" - {col_name} ({data_type})\\n"
