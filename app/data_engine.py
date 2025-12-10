@@ -3,23 +3,32 @@ import os
 
 class DataEngine:
     def __init__(self, data_path="data/"):
-        self.spark = SparkSession.builder \
-            .appName("OlistDataMesh") \
-            .enableHiveSupport() \
-            .getOrCreate()
         self.data_path = data_path
+        # Do not initialize spark here to avoid conflict in Databricks
+        self.spark = None
 
     def initialize_session(self):
         """
-        Gets the existing Spark session or creates a new one if not available.
-        This handles both Databricks Runtime (where spark is global) and local execution.
+        Gets the existing Spark session. 
+        In Databricks, this picks up the global 'spark' variable context.
         """
-        try:
-            # Try to get the existing active session (Databricks Runtime)
-            return SparkSession.getActiveSession()
-        except:
-             # If no session is active, fallback to builder
-             return self.spark
+        if self.spark is None:
+            # Try to get existing session (Databricks default)
+            self.spark = SparkSession.getActiveSession()
+            
+            # Fallback for local testing ONLY if no session exists
+            if self.spark is None:
+                self.spark = SparkSession.builder \
+                    .appName("OlistDataMesh") \
+                    .getOrCreate()
+        
+        return self.spark
+
+    def get_spark_session(self):
+        # Lazy load ensures we don't crash on import/init
+        if self.spark is None:
+            return self.initialize_session()
+        return self.spark
 
     def ingest_data_mesh(self):
         """
