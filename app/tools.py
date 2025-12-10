@@ -18,14 +18,18 @@ class SparkSQLTool:
         try:
             # Execution
             print(f"Executing Query: {safe_query}")
+            # User confirmed this syntax works: spark.sql("...").show() or toPandas
             df = self.spark.sql(safe_query)
-            return df.toPandas().to_string() # Return as string for the agent
+            
+            # Using toPandas() as requested/suggested by user for easier string formatting for the LLM
+            # outputting a limited string representation to not blow up context
+            return df.limit(20).toPandas().to_string() 
         
         except AnalysisException as e:
             # 3. Trava de Auto-Cura (Self-Healing)
             error_message = str(e)
             print(f"SQL Error Encountered: {error_message}")
-            return f"ERROR: The interaction failed due to the following SQL error: {error_message}. Please analyze the error and rewrite your query."
+            return f"ERROR: The interaction failed due to the following SQL error: {error_message}. Please analyze the error and rewrite your query using correct table names (e.g., olist_dataset.domain.table)."
         except Exception as e:
             return f"ERROR: An unexpected error occurred: {str(e)}"
 

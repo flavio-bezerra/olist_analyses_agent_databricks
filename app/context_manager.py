@@ -20,53 +20,29 @@ class ContextManager:
 
         for domain in domains:
             try:
-                # Use SQL to list tables which handles 'catalog.database' better than catalog.listTables("db") in some versions
-                # or just use spark.catalog.listTables(dbName) if updated.
-                # Let's use SQL for broader compatibility with Hive/Unity Catalog syntax
+                # User verified syntax: spark.sql("SHOW TABLES IN olist_dataset.olist_cx")
+                # Our 'domain' variable already contains 'olist_dataset.olist_finance' etc from role_domains
+                print(f"Loading schema for domain: {domain}")
                 tables_df = self.spark.sql(f"SHOW TABLES IN {domain}")
-                tables = tables_df.collect() # columns: database, tableName, isTemporary
+                tables = tables_df.collect() 
                 
                 for table in tables:
-                    # In SHOW TABLES, usually column 'tableName' holds the name
-                    # Warning: 'database' column might be empty if we used fully qualified, or it matches the db
+                    # columns usually: database, tableName, isTemporary
                     t_name = table['tableName']
+                    # Construct full qualified name: olist_dataset.olist_finance.table_name
                     full_table_name = f"{domain}.{t_name}"
                     
                     context_str += f"\\nTable: {full_table_name}\\nColumns:\\n"
                     
-                    # Describe table to get columns
+                    # Describe
                     columns_df = self.spark.sql(f"DESCRIBE {full_table_name}")
                     columns = columns_df.collect()
                     
                     for col in columns:
-                        # usually col_name, data_type, comment
                         col_name = col['col_name']
                         data_type = col['data_type']
                         context_str += f" - {col_name} ({data_type})\\n"
             except Exception as e:
-                # Fallback implementation if catalog 'olist_dataset' doesn't exist (e.g. running local w/o UC)
-                # We try removing the prefix 'olist_dataset.'
-                fallback_domain = domain.replace("olist_dataset.", "")
-                if fallback_domain != domain:
-                     try:
-                        tables_df = self.spark.sql(f"SHOW TABLES IN {fallback_domain}")
-                        tables = tables_df.collect()
-                        pass # If successful, we should process it. 
-                        # For simplicity, we just append a note or recursively call? 
-                        # Let's just error message here to keep it simple or log the fallback attempt.
-                        context_str += f"\\n(Fallback) Could not reach {domain}, trying {fallback_domain}...\\n"
-                        # Re-implementing the loop for fallback - duplicating code slightly to be safe
-                        for table in tables:
-                            t_name = table['tableName']
-                            full_table_name = f"{fallback_domain}.{t_name}"
-                            context_str += f"\\nTable: {full_table_name}\\nColumns:\\n"
-                            columns_df = self.spark.sql(f"DESCRIBE {full_table_name}")
-                            columns = columns_df.collect()
-                            for col in columns:
-                                context_str += f" - {col['col_name']} ({col['data_type']})\\n"
-                     except Exception as e2:
-                        context_str += f"\\nCould not retrieve schema for domain {domain}: {str(e)}\\n"
-                else:
-                    context_str += f"\\nCould not retrieve schema for domain {domain}: {str(e)}\\n"
-        
-        return context_str
+                # Fallback implementation logic remains or simplified
+                print(f"Error loading schema for {domain}: {e}")
+                context_str += f"\\nCould not retrieve schema for domain {domain}: {str(e)}\\n"
