@@ -7,6 +7,17 @@ class ContextManager:
             "logistics": ["olist_dataset.olist_sales", "olist_dataset.olist_logistics"],
             "finance": ["olist_dataset.olist_finance", "olist_dataset.olist_cx"]
         }
+        # Available tables for reference
+        self.available_tables = [
+            ("olist_cx", "order_reviews", False),
+            ("olist_finance", "order_payments", False),
+            ("olist_logistics", "customers", False),
+            ("olist_logistics", "geolocation", False),
+            ("olist_logistics", "sellers", False),
+            ("olist_sales", "order_items", False),
+            ("olist_sales", "orders", False),
+            ("olist_sales", "products", False)
+        ]
 
     def get_schema_context(self, agent_role):
         """
@@ -14,6 +25,28 @@ class ContextManager:
         """
         if agent_role not in self.role_domains:
             return ""
+
+        domains = self.role_domains[agent_role]
+        context_str = f"Specific Data Context for {agent_role.capitalize()} Agent:\n"
+
+        for domain in domains:
+            try:
+                print(f"Loading schema for domain: {domain}")
+                tables_df = self.spark.sql(f"SHOW TABLES IN {domain}").limit(100)
+                tables = tables_df.select("tableName").rdd.flatMap(lambda x: x).collect()
+                
+                for t_name in tables:
+                    full_table_name = f"{domain}.{t_name}"
+                    context_str += f"\nTable: {full_table_name}\nColumns:\n"
+                    columns_df = self.spark.sql(f"DESCRIBE {full_table_name}")
+                    columns = columns_df.select("col_name", "data_type").rdd.collect()
+                    for col in columns:
+                        col_name = col["col_name"]
+                        data_type = col["data_type"]
+                        context_str += f" - {col_name} ({data_type})\n"
+            except Exception as e:
+                print(f"Error loading schema for {domain}: {e}")
+                context_str += f"\nCould not retrieve schema for domain {domain}: {str(e)}\n"
 
         domains = self.role_domains[agent_role]
         context_str = f"Specific Data Context for {agent_role.capitalize()} Agent:\\n"
