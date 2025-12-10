@@ -1,16 +1,50 @@
+"""
+Motor de Dados (A Fundação)
+
+Este módulo é responsável por "construir o prédio" onde os agentes vão trabalhar. 
+Ele lida com a infraestrutura de dados bruta.
+
+Objetivo Didático:
+1. Inicializar o Spark: Liga o motor de processamento de dados.
+2. Ingestão de Dados: Lê os arquivos CSV soltos (raw data) e os organiza em "bancos de dados" lógicos (Data Mesh).
+   É como pegar papéis espalhados numa mesa e organizá-los em pastas etiquetadas (Vendas, Logística, Finanças) 
+   para que os agentes possam encontrar facilmente.
+"""
 from pyspark.sql import SparkSession
 import os
 
 class DataEngine:
     def __init__(self, data_path="data/"):
+        """
+        Inicializa o DataEngine.
+
+        Define o caminho onde os arquivos de dados CSV estão localizados. Não inicializa 
+        imediatamente a sessão Spark para evitar potenciais conflitos em ambientes de notebook.
+
+        Entradas:
+            data_path (str, opcional): Caminho relativo ou absoluto para a pasta de dados. 
+                                       Padrão é "data/".
+
+        Saídas:
+            Nenhuma
+        """
         self.data_path = data_path
         # Do not initialize spark here to avoid conflict in Databricks
         self.spark = None
 
     def initialize_session(self):
         """
-        Gets the existing Spark session. 
-        In Databricks, this picks up the global 'spark' variable context.
+        Obtém a sessão Spark existente ou cria uma nova, se necessário.
+        
+        Tenta recuperar uma sessão ativa (comum em ambientes Databricks ou 
+        Jupyter) para reutilizar recursos. Se nenhuma existir, constrói uma 
+        nova sessão Spark local.
+
+        Entradas:
+            Nenhuma
+
+        Saídas:
+            SparkSession: O objeto de sessão Spark ativo.
         """
         if self.spark is None:
             # Try to get existing session (Databricks default)
@@ -25,6 +59,18 @@ class DataEngine:
         return self.spark
 
     def get_spark_session(self):
+        """
+        Carregador preguiçoso (lazy loader) para a sessão Spark.
+
+        Garante que a sessão seja inicializada apenas quando solicitada. Este método é 
+        seguro para ser chamado repetidamente, pois retornará o `self.spark` existente se já estiver definido.
+
+        Entradas:
+            Nenhuma
+
+        Saídas:
+            SparkSession: A sessão Spark ativa.
+        """
         # Lazy load ensures we don't crash on import/init
         if self.spark is None:
             return self.initialize_session()
@@ -32,8 +78,18 @@ class DataEngine:
 
     def ingest_data_mesh(self):
         """
-        Creates the 4 logical databases (Domínios de Dados) and loads data.
-        Call this EXPERICITLY when you want to re-load raw CSVs into Tables.
+        Cria os bancos de dados lógicos (Domínios de Data Mesh) e ingere dados de CSVs.
+        
+        Este método analisa a estrutura de domínio definida, cria os Catálogos/Schemas/Bancos de Dados 
+        necessários no Spark e carrega o conteúdo CSV em tabelas gerenciadas. 
+        Lida com falhas na criação de catálogos (usando fallback para o padrão) e erros específicos 
+        de carregamento de arquivos de forma graciosa.
+
+        Entradas:
+            Nenhuma (usa self.data_path e mapeamento interno DOMAINS)
+
+        Saídas:
+            Nenhuma (Imprime mensagens de status no stdout)
         """
         domains = {
             "olist_sales": ["olist_orders_dataset.csv", "olist_order_items_dataset.csv", "olist_products_dataset.csv"],

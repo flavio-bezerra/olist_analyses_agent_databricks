@@ -1,3 +1,17 @@
+"""
+Orquestrador (O Chefe/Gerente)
+
+Este arquivo é quem manda em tudo. Ele não faz o trabalho pesado, mas coordena quem faz o quê e quando.
+
+Objetivo Didático:
+Se os agentes são músicos, o Orchestrator é o regente. 
+Ele:
+1. Prepara o palco (inicializa o DataEngine e as ferramentas).
+2. Chama o Agente de Logística para tocar sua parte (analisar entregas).
+3. Pega o resultado da Logística e passa para o Agente de Finanças (calcular prejuízos).
+4. Por fim, chama o COO para fazer o resumo final.
+Sem ele, os agentes ficariam parados sem saber o que fazer.
+"""
 from app.data_engine import DataEngine
 from app.tools import SparkSQLTool
 from app.context_manager import ContextManager
@@ -5,6 +19,20 @@ from app.agents import Agent
 
 class Orchestrator:
     def __init__(self):
+        """
+        Inicializa o Orquestrador.
+
+        Configura todo o pipeline de agentes:
+        1. inicializando a Camada de Dados (DataEngine),
+        2. criando as Camadas de Conexão e Contexto (SparkSQLTool, ContextManager),
+        3. instanciando os Agentes específicos (Logística, Finanças, COO) com suas respectivas funções e ferramentas.
+
+        Entradas:
+            Nenhuma
+
+        Saídas:
+            Nenhuma
+        """
         print("Initializing Orchestrator...")
         # 1. Initialize Data Layer
         self.data_engine = DataEngine()
@@ -22,6 +50,19 @@ class Orchestrator:
         self.coo_agent = Agent("COO", "coo", self.context_manager, tool=None) # COO has no SQL access
 
     def run_pipeline(self):
+        """
+        Executa o pipeline sequencial de agentes (Logística -> Finanças -> COO).
+
+        1. Agente de Logística: Diagnostica a performance de entrega e causas de atraso.
+        2. Agente de Finanças: Calcula o impacto financeiro dos problemas identificados.
+        3. Agente COO: Sintetiza as descobertas em um plano de ação estratégico.
+
+        Entradas:
+            Nenhuma
+
+        Saídas:
+            str: O plano de ação estratégico final gerado pelo Agente COO.
+        """
         print("\n=== INICIANDO PIPELINE DE AGENTES ===\n")
 
         # Step 1: Logistics Agent (Diagnostic)
