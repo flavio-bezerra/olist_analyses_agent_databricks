@@ -74,7 +74,7 @@ class Agent:
 
         # 2. Execution Loop (Reasoning + Tool Use)
         # We allow a few turns for self-healing
-        max_turns = 5 
+        max_turns = 20 
         
         for i in range(max_turns):
             response = self.llm.completion(self.history)
