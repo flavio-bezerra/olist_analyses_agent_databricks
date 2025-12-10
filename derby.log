@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Wed Dec 10 09:31:14 BRT 2025:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.14.2.0 - (1828579): instance a816c00e-019b-083e-84df-000016cceea8 
+on database directory C:\Users\flavio.bezerra\OneDrive\Documentos\02. Python Scripts\olist_analyses_agent_databricks\metastore_db with class loader sun.misc.Launcher$AppClassLoader@1a86f2f1 
+Loaded from file:/C:/Spark/spark-3.5.6-bin-hadoop3/jars/derby-10.14.2.0.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_471-b09
+user.dir=C:\Users\flavio.bezerra\OneDrive\Documentos\02. Python Scripts\olist_analyses_agent_databricks
+os.name=Windows 11
+os.arch=amd64
+os.version=10.0
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
