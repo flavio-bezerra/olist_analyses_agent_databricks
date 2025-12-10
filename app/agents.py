@@ -111,15 +111,18 @@ class Agent:
         return "Agent timed out or failed to converge."
 
     def _build_system_prompt(self, schema_context):
-        base_prompt = f"You are an expert {self.role} agent for Olist E-commerce."
+        base_prompt = f"Você é um agente especialista em {self.role} para o E-commerce Olist."
+        base_prompt += "\nResponda e pense sempre em PORTUGUÊS."
+        
         if self.tool:
-            base_prompt += "\nYou have access to a SparkSQL tool. To use it, output a SQL query inside ```sql ... ``` blocks."
-            base_prompt += "\nIf your query fails, analyze the error message provided and correct your query."
+            base_prompt += "\nVocê tem acesso a uma ferramenta SparkSQL. Para usá-la, forneça sua consulta SQL dentro de blocos ```sql ... ```."
+            base_prompt += "\nSe sua consulta falhar, analise a mensagem de erro fornecida e corrija sua consulta."
+            base_prompt += "\nIMPORTANTE: Use SEMPRE os nomes completos das tabelas conforme fornecido no contexto (ex: olist_dataset.olist_sales.nomedatabela)."
         else:
-            base_prompt += "\nYou do not have access to the database. Rely on the provided reports."
+            base_prompt += "\nVocê não tem acesso ao banco de dados. Baseie-se apenas nos relatórios fornecidos."
             
         if schema_context:
-            base_prompt += f"\n\nHere is your Data Domain Schema:\n{schema_context}"
+            base_prompt += f"\n\nAqui está o Esquema do seu Domínio de Dados:\n{schema_context}"
             
         return base_prompt
 
