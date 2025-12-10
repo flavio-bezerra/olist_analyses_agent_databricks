@@ -18,9 +18,9 @@ Este projeto implementa uma arquitetura de Agentes de Dados utilizando Spark/Dat
    conda activate olist_agent_env
    ```
    
-   Ou instale via pip:
+   Ou instale via pip usando o arquivo `requirements.txt`:
    ```bash
-   pip install pyspark==3.5.0 pandas==2.1.4 databricks-langchain==0.1.0 langchain-core==0.1.52 kagglehub==0.2.4
+   pip install -r requirements.txt
    ```
    *Nota: Java 8/11 é necessário para o PySpark.*
 
