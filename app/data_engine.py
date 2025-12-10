@@ -10,8 +10,16 @@ class DataEngine:
         self.data_path = data_path
 
     def initialize_session(self):
-        """Just ensures Spark is alive."""
-        return self.spark
+        """
+        Gets the existing Spark session or creates a new one if not available.
+        This handles both Databricks Runtime (where spark is global) and local execution.
+        """
+        try:
+            # Try to get the existing active session (Databricks Runtime)
+            return SparkSession.getActiveSession()
+        except:
+             # If no session is active, fallback to builder
+             return self.spark
 
     def ingest_data_mesh(self):
         """
