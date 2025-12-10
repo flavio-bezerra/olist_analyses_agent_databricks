@@ -25,9 +25,18 @@ class DataEngine:
             "olist_cx": ["olist_order_reviews_dataset.csv"]
         }
 
+        # Try to create catalog
+        try:
+             self.spark.sql("CREATE CATALOG IF NOT EXISTS olist_dataset")
+             catalog_prefix = "olist_dataset."
+        except:
+             print("Warning: Could not create catalog. Using default.")
+             catalog_prefix = ""
+
         for domain, files in domains.items():
-            print(f"Creating Domain: {domain}")
-            self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {domain}")
+            db_name = f"{catalog_prefix}{domain}"
+            print(f"Creating Domain: {db_name}")
+            self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {db_name}")
             
             for file in files:
                 table_name = file.replace("olist_", "").replace("_dataset.csv", "")
@@ -35,15 +44,16 @@ class DataEngine:
                 
                 # Check if file exists to avoid errors during empty runs
                 if os.path.exists(file_path):
-                    print(f"  Loading {table_name} from {file_path} into {domain}.{table_name}")
+                    target_table = f"{db_name}.{table_name}"
+                    print(f"  Loading {table_name} from {file_path} into {target_table}")
                     try:
                         df = self.spark.read.csv(file_path, header=True, inferSchema=True)
                         # Save as table in the specific database
-                        df.write.mode("overwrite").saveAsTable(f"{domain}.{table_name}")
+                        df.write.mode("overwrite").saveAsTable(target_table)
                     except Exception as e:
                         print(f"  Error loading {table_name}: {e}")
                 else:
-                    print(f"  Warning: File {file_path} not found. Skipping table {domain}.{table_name}.")
+                    print(f"  Warning: File {file_path} not found. Skipping table.")
 
     def get_spark_session(self):
         return self.spark
