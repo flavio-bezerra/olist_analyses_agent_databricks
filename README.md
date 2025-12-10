@@ -31,11 +31,14 @@ Este projeto implementa uma arquitetura de Agentes de Dados utilizando Spark/Dat
 
 
 ## Execução
-1. **Prepare os Dados (Uma vez):**
+1. **Baixe os Dados (Uma vez):**
+   Execute o notebook `download_data.ipynb` para baixar automaticamente os dados do Kaggle e organizá-los na pasta `data/`.
+
+2. **Prepare o Data Mesh (Uma vez):**
    Execute o notebook `setup_data_mesh.ipynb` para carregar os CSVs e criar as tabelas no Spark.
    *Isso garante que o Agente tenha bancos de dados "olist_sales", "olist_logistics", etc. para consultar.*
 
-2. **Execute o Agente:**
+3. **Execute o Agente:**
    Execute o script principal:
    ```bash
    python main.py
