@@ -51,18 +51,22 @@ class Orchestrator:
         # - 'databricks-meta-llama-3-1-405b-instruct' (Smartest/Slowest)
         # - 'databricks-llama-4-maverick' (Preview)
         # Temperature: 0.0-0.2 (Analytical) | 0.5-0.7 (Creative/Strategic)
+        # Max Tokens: Controlls response length (4000 = concise, 8000 = detailed)
         self.agent_config = {
             "logistics": {
                 "model": "databricks-meta-llama-3-3-70b-instruct",
-                "temperature": 0.1
+                "temperature": 0.1,
+                "max_tokens": 6000
             },
             "finance": {
                 "model": "databricks-meta-llama-3-1-405b-instruct",
-                "temperature": 0.1
+                "temperature": 0.1,
+                "max_tokens": 4000
             },
             "coo": {
                 "model": "databricks-meta-llama-3-1-405b-instruct",
-                "temperature": 0.5 # Higher temp for more natural & strategic writing
+                "temperature": 0.5, # Higher temp for more natural & strategic writing
+                "max_tokens": 4000  # COO needs more space for detailed strategy
             }
         }
 
@@ -70,7 +74,7 @@ class Orchestrator:
         
         # Logistics Persona
         logistics_persona = """
-   VOCÊ É: Diretora de Operações Logísticas do Olist Marketplace.
+        VOCÊ É: Diretora de Operações Logísticas do Olist Marketplace.
 CONTEXTUALIZAÇÃO: Você lidera a cadeia de suprimentos de um marketplace com milhares de vendedores distribuídos por todo o Brasil e clientes finais em mais de 5.500 municípios. Seu escopo inclui transporte, armazenagem, fulfillment, last mile, gestão de transportadoras, estoque virtual e experiência logística.
 MISSÃO ESTRATÉGICA: Entregar 95% dos pedidos no prazo (OTIF), manter o custo médio de frete ≤ R$ 18,50 e garantir resiliência da rede mesmo em cenários de alta demanda ou interrupções regionais.
 
@@ -117,7 +121,8 @@ MISSÃO ESTRATÉGICA: Entregar 95% dos pedidos no prazo (OTIF), manter o custo m
             self.tool,
             persona_instructions=logistics_persona,
             model_name=self.agent_config["logistics"]["model"],
-            temperature=self.agent_config["logistics"]["temperature"]
+            temperature=self.agent_config["logistics"]["temperature"],
+            max_tokens=self.agent_config["logistics"]["max_tokens"]
         )
 
         # Finance Persona
@@ -204,7 +209,8 @@ FORMATO DE RESPOSTA (Financeiro Executivo):
             self.tool,
             persona_instructions=finance_persona,
             model_name=self.agent_config["finance"]["model"],
-            temperature=self.agent_config["finance"]["temperature"]
+            temperature=self.agent_config["finance"]["temperature"],
+            max_tokens=self.agent_config["finance"]["max_tokens"]
         )
 
         # COO Persona
@@ -265,7 +271,8 @@ FORMATO DE RESPOSTA (Executivo de Alta Consequência):
             tool=None, # COO has no SQL access
             persona_instructions=coo_persona,
             model_name=self.agent_config["coo"]["model"],
-            temperature=self.agent_config["coo"]["temperature"]
+            temperature=self.agent_config["coo"]["temperature"],
+            max_tokens=self.agent_config["coo"]["max_tokens"]
         )
 
     def run_pipeline(self):
