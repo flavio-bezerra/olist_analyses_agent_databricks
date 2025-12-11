@@ -175,31 +175,53 @@ class Agent:
 
     def _build_system_prompt(self, schema_context):
         """
-        Constrói o prompt do sistema para o agente com base em sua função e ferramentas disponíveis.
-
-        Entradas:
-            schema_context (str): A descrição do schema do banco de dados relevante para o domínio do agente.
-
-        Saídas:
-            str: Uma string formatada contendo as instruções do sistema e o contexto do schema.
+        Constrói o prompt do sistema com esteróides: força ações concretas e proíbe respostas vagas.
         """
-        if self.persona_instructions:
-            base_prompt = f"{self.persona_instructions}"
-            base_prompt += "\n\nO contexto do negócio é o E-commerce Olist (Marketplace Brasileiro)."
-            base_prompt += "\nResponda e pense sempre em PORTUGUÊS."
-        else:
-            base_prompt = f"Você é um agente especialista em {self.role} para o E-commerce Olist."
-            base_prompt += "\nResponda e pense sempre em PORTUGUÊS."
+        # 1. Definição de Persona (Role) com mais autoridade
+        base_prompt = f"ATUAR COMO: {self.role.upper()} Sênior do E-commerce Olist.\n"
         
-        if self.tool:
-            base_prompt += "\nVocê tem acesso a uma ferramenta SparkSQL. Para usá-la, forneça sua consulta SQL dentro de blocos ```sql ... ```."
-            base_prompt += "\nSe sua consulta falhar, analise a mensagem de erro fornecida e corrija sua consulta."
-            base_prompt += "\nIMPORTANTE: Use SEMPRE os nomes completos das tabelas conforme fornecido no contexto (ex: olist_dataset.olist_sales.nomedatabela)."
+        if self.persona_instructions:
+            base_prompt += f"\nOBJETIVO ESPECÍFICO: {self.persona_instructions}\n"
         else:
-            base_prompt += "\nVocê não tem acesso ao banco de dados SQL. Baseie-se apenas nos relatórios e textos fornecidos como contexto."
+            base_prompt += "\nOBJETIVO: Identificar ineficiências e propor soluções drásticas para melhorar a operação.\n"
+            
+        base_prompt += "\nO contexto do negócio é o E-commerce Olist (Marketplace Brasileiro)."
+        base_prompt += "\nResponda e pense sempre em PORTUGUÊS."
+
+        # 2. O FRAMEWORK DE AÇÃO (A parte mágica para resolver o problema de respostas genéricas)
+        base_prompt += """
+        
+        ###################################################################
+        ### REGRAS DE OURO PARA RESPOSTA (LEITURA OBRIGATÓRIA)
+        ###################################################################
+        
+        Você está ESTRITAMENTE PROIBIDO de dar conselhos genéricos como "melhorar a comunicação", 
+        "analisar mais dados" ou "criar sinergia". Isso é inútil para nós.
+        
+        Toda vez que você identificar um problema, você DEVE fornecer um PLANO DE AÇÃO no seguinte formato:
+        
+        1. 🚨 AÇÃO IMEDIATA: O que fazer EXATAMENTE (ex: "Bloquear Seller X", "Aumentar frete em 10% no RS").
+        2. 👤 RESPONSÁVEL: Qual departamento executa (ex: Logística, Financeiro, Comercial).
+        3. 💰 IMPACTO ESTIMADO: Qual o ganho financeiro ou operacional esperado (use os dados para estimar).
+        4. 🔍 EVIDÊNCIA: Qual dado (tabela/coluna) prova que essa ação é necessária.
+        
+        Se você não tiver certeza, não enrole. Diga: "Faltam dados sobre X para uma decisão segura", e sugira a query para buscar esse dado.
+        ###################################################################
+        """
+        
+        # 3. Instruções de Ferramentas (Tooling) - Mantendo a lógica original mas reforçando o uso
+        if self.tool:
+            base_prompt += "\n\n### ACESSO A DADOS (SPARK SQL)"
+            base_prompt += "\nVocê TEM superpoderes de dados. Não suponha, VERIFIQUE."
+            base_prompt += "\nPara consultar, use blocos: ```sql ... ```"
+            base_prompt += "\nSe a query falhar, analise o erro, corrija e tente novamente sozinho."
+            base_prompt += "\nIMPORTANTE: Use sempre o namespace completo: olist_dataset.olist_sales.<tabela>."
+        else:
+            base_prompt += "\n\n### SEM ACESSO SQL"
+            base_prompt += "\nBaseie suas recomendações exclusivamente nos relatórios textuais fornecidos."
             
         if schema_context:
-            base_prompt += f"\n\nAqui está o Esquema do seu Domínio de Dados:\n{schema_context}"
+            base_prompt += f"\n\n### ESQUEMA DE DADOS (MAPA DA MINA):\n{schema_context}"
             
         return base_prompt
 
