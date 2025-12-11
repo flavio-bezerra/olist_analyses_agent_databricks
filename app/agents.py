@@ -181,15 +181,15 @@ class Agent:
         """
         Constrói o prompt do sistema utilizando templates injetados pelo Orchestrator.
         """
-        # 1. Recupera o Prompt Base da Injeção de Dependência
-        # Se nenhuma instrução for passada, usa um default genérico.
         base_prompt = self.persona_instructions if self.persona_instructions else "Você é um assistente IA analítico útil."
             
-        # 2. Adiciona Schema de Dados se disponível
         if schema_context:
-            base_prompt += f"\n\n### MAPA DE DADOS (CRUCIAL PARA EVITAR ERROS):\n" \
-                           f"ATENÇÃO: Use SOMENTE as tabelas e colunas listadas abaixo. Respeite os tipos de dados (Data Type).\n" \
-                           f"O SQL deve ser compatível com SparkSQL.\n\n" \
+            # ADICIONADO: Instrução explícita sobre Qualified Names
+            base_prompt += f"\n\n### REGRAS DE SQL (SEGURANÇA):\n" \
+                           f"1. Use SEMPRE o nome totalmente qualificado das tabelas (ex: olist_dataset.olist_sales.orders).\n" \
+                           f"2. O comando 'USE database' não é permitido. Referencie o schema direto na query.\n" \
+                           f"3. Verifique os nomes das colunas abaixo antes de criar filtros.\n\n" \
+                           f"### MAPA DE DADOS:\n" \
                            f"{schema_context}"
             
         return base_prompt
