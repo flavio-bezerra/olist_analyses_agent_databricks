@@ -85,6 +85,27 @@ class LLMClient:
         except Exception as e:
             return f"ERROR: Databricks LLM Interaction Failed: {str(e)}"
 
+AGENT_PERSONAS = {
+    "logistics": {
+        "role": "Head de Logística e Supply Chain",
+        "mission": "Sua missão única é reduzir o Custo de Frete e eliminar Atrasos de Entrega.",
+        "anti_pattern": "Não sugira 'monitorar' ou 'conversar com transportadoras'.",
+        "action_logic": "Se o atraso é alto em uma região -> A solução é Aumentar o Lead Time ou Trocar Transportadora. Se o frete é caro -> A solução é Subsídio ou Aumento de Preço."
+    },
+    "finance": {
+        "role": "Diretor Financeiro (CFO)",
+        "mission": "Sua missão única é garantir que nenhuma venda tenha margem negativa.",
+        "anti_pattern": "Não fale sobre 'otimizar processos' de forma abstrata.",
+        "action_logic": "Se o parcelamento corrói o lucro -> A solução é limitar parcelas. Se o ticket médio é baixo -> A solução é criar kits (bundling) ou subir preço mínimo."
+    },
+    "coo": {
+        "role": "Chief Operating Officer (COO)",
+        "mission": "Sua missão é tomar a decisão difícil baseada nos dados cruzados de todas as áreas.",
+        "anti_pattern": "Não delegue a decisão. Não diga 'A equipe de marketing deve...'. Diga o que VAI ser feito.",
+        "action_logic": "Identifique o gargalo principal (Logística ou Financeiro) e dite a regra de negócio para estancar a sangria imediatamente."
+    }
+}
+
 class Agent:
     def __init__(self, name, role, context_manager, tool=None, persona_instructions=None):
         """
@@ -124,7 +145,7 @@ class Agent:
         Saídas:
             str: A resposta de texto final do agente (ou uma mensagem de timeout).
         """
-        print(f"\n--- Starting Agent: {self.name} ({self.role}) ---")
+        print(f"\\n--- Starting Agent: {self.name} ({self.role}) ---")
         
         # 1. Build Context
         schema_context = self.context_manager.get_schema_context(self.role)
@@ -175,53 +196,55 @@ class Agent:
 
     def _build_system_prompt(self, schema_context):
         """
-        Constrói o prompt do sistema com esteróides: força ações concretas e proíbe respostas vagas.
+        Constrói o prompt forçando uma postura de resolução de problemas baseada em dados.
         """
-        # 1. Definição de Persona (Role) com mais autoridade
-        base_prompt = f"ATUAR COMO: {self.role.upper()} Sênior do E-commerce Olist.\n"
-        
-        if self.persona_instructions:
-            base_prompt += f"\nOBJETIVO ESPECÍFICO: {self.persona_instructions}\n"
-        else:
-            base_prompt += "\nOBJETIVO: Identificar ineficiências e propor soluções drásticas para melhorar a operação.\n"
-            
-        base_prompt += "\nO contexto do negócio é o E-commerce Olist (Marketplace Brasileiro)."
-        base_prompt += "\nResponda e pense sempre em PORTUGUÊS."
+        # Recupera a configuração específica da persona ou usa um padrão genérico
+        persona_config = AGENT_PERSONAS.get(self.role, {
+            "role": f"Especialista em {self.role}",
+            "mission": "Resolver problemas de negócio.",
+            "anti_pattern": "Não seja genérico.",
+            "action_logic": "Baseie-se em dados."
+        })
 
-        # 2. O FRAMEWORK DE AÇÃO (A parte mágica para resolver o problema de respostas genéricas)
-        base_prompt += """
+        base_prompt = f"""
+        VOCÊ É: {persona_config['role']}
+        MISSÃO: {persona_config['mission']}
         
-        ###################################################################
-        ### REGRAS DE OURO PARA RESPOSTA (LEITURA OBRIGATÓRIA)
-        ###################################################################
+        O QUE VOCÊ NÃO DEVE FAZER: {persona_config['anti_pattern']}
+        LÓGICA DE SOLUÇÃO: {persona_config['action_logic']}
         
-        Você está ESTRITAMENTE PROIBIDO de dar conselhos genéricos como "melhorar a comunicação", 
-        "analisar mais dados" ou "criar sinergia". Isso é inútil para nós.
+        CONTEXTO: E-commerce Olist (Marketplace Brasileiro).
+        IDIOMA: Português (PT-BR).
         
-        Toda vez que você identificar um problema, você DEVE fornecer um PLANO DE AÇÃO no seguinte formato:
+        ===============================================================
+        FORMATO OBRIGATÓRIO DE RESPOSTA (Siga estritamente)
+        ===============================================================
         
-        1. 🚨 AÇÃO IMEDIATA: O que fazer EXATAMENTE (ex: "Bloquear Seller X", "Aumentar frete em 10% no RS").
-        2. 👤 RESPONSÁVEL: Qual departamento executa (ex: Logística, Financeiro, Comercial).
-        3. 💰 IMPACTO ESTIMADO: Qual o ganho financeiro ou operacional esperado (use os dados para estimar).
-        4. 🔍 EVIDÊNCIA: Qual dado (tabela/coluna) prova que essa ação é necessária.
-        
-        Se você não tiver certeza, não enrole. Diga: "Faltam dados sobre X para uma decisão segura", e sugira a query para buscar esse dado.
-        ###################################################################
+        Você não está aqui para dar conselhos, está aqui para dar ORDENS baseadas em fatos.
+        Sua resposta final deve seguir esta estrutura:
+
+        1. 🎯 O PROBLEMA RAIZ (Diagnosticado via Dados)
+           - Descreva o problema específico encontrado (ex: "Atraso de 15% nas entregas para RJ").
+           - Mostre o DADO que prova isso (ex: "Resultado da Query SQL: média de atraso = 4 dias").
+
+        2. �️ A SOLUÇÃO TÉCNICA (Ação Executável)
+           - Qual parâmetro do sistema deve ser alterado? (ex: "Alterar 'shipping_limit_date' para +2 dias").
+           - Qual regra de negócio deve ser ativada? (ex: "Bloquear vendas com frete > 30% do valor do produto").
+           
+        3. 📉 IMPACTO ESPERADO
+           - O que essa ação resolve? (ex: "Redução imediata de reclamações no SAC em 20%").
+
+        ===============================================================
         """
-        
-        # 3. Instruções de Ferramentas (Tooling) - Mantendo a lógica original mas reforçando o uso
+
         if self.tool:
-            base_prompt += "\n\n### ACESSO A DADOS (SPARK SQL)"
-            base_prompt += "\nVocê TEM superpoderes de dados. Não suponha, VERIFIQUE."
-            base_prompt += "\nPara consultar, use blocos: ```sql ... ```"
-            base_prompt += "\nSe a query falhar, analise o erro, corrija e tente novamente sozinho."
-            base_prompt += "\nIMPORTANTE: Use sempre o namespace completo: olist_dataset.olist_sales.<tabela>."
-        else:
-            base_prompt += "\n\n### SEM ACESSO SQL"
-            base_prompt += "\nBaseie suas recomendações exclusivamente nos relatórios textuais fornecidos."
-            
+            base_prompt += "\\n\\n### FERRAMENTA SQL DISPONÍVEL"
+            base_prompt += "\\nVocê DEVE usar SQL para provar seu ponto. Não chute, consulte."
+            base_prompt += "\\nUse blocos ```sql ... ``` para executar queries."
+            base_prompt += "\\nTabelas disponíveis: olist_dataset.olist_sales.<tabela>."
+        
         if schema_context:
-            base_prompt += f"\n\n### ESQUEMA DE DADOS (MAPA DA MINA):\n{schema_context}"
+            base_prompt += f"\\n\\n### MAPA DE DADOS (SCHEMA):\\n{schema_context}"
             
         return base_prompt
 
