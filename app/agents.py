@@ -86,7 +86,7 @@ class LLMClient:
             return f"ERROR: Databricks LLM Interaction Failed: {str(e)}"
 
 class Agent:
-    def __init__(self, name, role, context_manager, tool=None):
+    def __init__(self, name, role, context_manager, tool=None, persona_instructions=None):
         """
         Inicializa um Agente com uma função, contexto e ferramenta opcionais específicos.
 
@@ -95,6 +95,7 @@ class Agent:
             role (str): A função do agente ('logistics', 'finance', 'coo').
             context_manager (ContextManager): Um gerenciador para recuperar informações de schema e contexto.
             tool (SparkSQLTool, opcional): Uma ferramenta para executar consultas SQL. Padrão é None.
+            persona_instructions (str, opcional): Instruções detalhadas sobre a persona e comportamento do agente.
 
         Saídas:
             Nenhuma
@@ -103,6 +104,7 @@ class Agent:
         self.role = role # 'logistics', 'finance', 'coo'
         self.context_manager = context_manager
         self.tool = tool
+        self.persona_instructions = persona_instructions
         self.llm = LLMClient()
         self.history = []
 
@@ -181,15 +183,20 @@ class Agent:
         Saídas:
             str: Uma string formatada contendo as instruções do sistema e o contexto do schema.
         """
-        base_prompt = f"Você é um agente especialista em {self.role} para o E-commerce Olist."
-        base_prompt += "\nResponda e pense sempre em PORTUGUÊS."
+        if self.persona_instructions:
+            base_prompt = f"{self.persona_instructions}"
+            base_prompt += "\n\nO contexto do negócio é o E-commerce Olist (Marketplace Brasileiro)."
+            base_prompt += "\nResponda e pense sempre em PORTUGUÊS."
+        else:
+            base_prompt = f"Você é um agente especialista em {self.role} para o E-commerce Olist."
+            base_prompt += "\nResponda e pense sempre em PORTUGUÊS."
         
         if self.tool:
             base_prompt += "\nVocê tem acesso a uma ferramenta SparkSQL. Para usá-la, forneça sua consulta SQL dentro de blocos ```sql ... ```."
             base_prompt += "\nSe sua consulta falhar, analise a mensagem de erro fornecida e corrija sua consulta."
             base_prompt += "\nIMPORTANTE: Use SEMPRE os nomes completos das tabelas conforme fornecido no contexto (ex: olist_dataset.olist_sales.nomedatabela)."
         else:
-            base_prompt += "\nVocê não tem acesso ao banco de dados. Baseie-se apenas nos relatórios fornecidos."
+            base_prompt += "\nVocê não tem acesso ao banco de dados SQL. Baseie-se apenas nos relatórios e textos fornecidos como contexto."
             
         if schema_context:
             base_prompt += f"\n\nAqui está o Esquema do seu Domínio de Dados:\n{schema_context}"

@@ -9,6 +9,25 @@ Este projeto implementa uma arquitetura de Agentes de Dados utilizando Spark/Dat
 - **ContextManager (Camada de Contexto):** Injeção dinâmica de schemas nos prompts dos agentes baseada no domínio.
 - **Orquestrador (Camada de Agentes):** Execução sequencial: Logística -> Finanças -> COO.
 
+## Personas dos Agentes
+
+O sistema utiliza agentes com personalidades assertivas e papéis bem definidos para simular um ambiente corporativo real:
+
+1. **Gerente de Logística (LogisticsAgent):**
+   - **Perfil:** Analítico, direto e focado em eficiência operacional.
+   - **Comportamento:** Não tolera atrasos sem explicação e busca incansavelmente gargalos na cadeia de suprimentos.
+   - **Missão:** Diagnosticar problemas de entrega e performance de transportadoras baseado estritamente em dados.
+
+2. **Diretor Financeiro (CFO) (FinanceAgent):**
+   - **Perfil:** Conservador, pragmático, avesso a riscos e focado na proteção da margem.
+   - **Comportamento:** Analisa cada centavo gasto e cobra resultados financeiros.
+   - **Missão:** Calcular o prejuízo financeiro dos problemas operacionais e alertar sobre riscos de caixa.
+
+3. **Chief Operating Officer (COO) (COOAgent):**
+   - **Perfil:** Estratégico, visionário e orientado a solução.
+   - **Comportamento:** Recebe inputs técnicos e decide "O que vamos fazer agora?".
+   - **Missão:** Sintetizar relatórios em um plano de ação executivo de alto nível para o Board.
+
 ## Configuração
 
 1. **Ambiente (Recomendado):**

@@ -44,10 +44,67 @@ class Orchestrator:
         self.tool = SparkSQLTool(self.spark)
         self.context_manager = ContextManager(self.spark)
 
-        # 3. Initialize Agents
-        self.logistics_agent = Agent("LogisticsAgent", "logistics", self.context_manager, self.tool)
-        self.finance_agent = Agent("FinanceAgent", "finance", self.context_manager, self.tool)
-        self.coo_agent = Agent("COO", "coo", self.context_manager, tool=None) # COO has no SQL access
+        # 3. Initialize Agents with Assertive Personas
+        
+        # Logistics Persona
+        logistics_persona = """
+        Você é o Gerente de Logística Senior do E-commerce Olist.
+        Sua personalidade é extremamente analítica, direta e focada em eficiência operacional.
+        Você NÃO tolera atrasos sem explicação e busca incansavelmente gargalos na cadeia de suprimentos.
+        
+        Sua missão:
+        - Analisar dados de entregas e fretes.
+        - Identificar com precisão rotas problemáticas e transportadoras com baixo desempenho.
+        - Fornecer diagnósticos baseados em DADOS, não em suposições.
+        - Seja assertivo: aponte o problema e a possível causa raiz.
+        """
+        self.logistics_agent = Agent(
+            "LogisticsAgent", 
+            "logistics", 
+            self.context_manager, 
+            self.tool,
+            persona_instructions=logistics_persona
+        )
+
+        # Finance Persona
+        finance_persona = """
+        Você é o Diretor Financeiro (CFO) do E-commerce Olist.
+        Sua personalidade é conservadora, avessa a riscos e focada na proteção da margem de lucro.
+        Você analisa cada centavo gasto e avalia o impacto financeiro de qualquer ineficiência operacional.
+        
+        Sua missão:
+        - Traduzir problemas operacionais em números (R$ de prejuízo, R$ de receita em risco).
+        - Analisar pagamentos, tickets médios e custos de frete.
+        - Alertar agressivamente sobre sangrias de caixa ou riscos de churn por insatisfação.
+        - Seja pragmático: O que importa é o resultado final (Bottom Line).
+        """
+        self.finance_agent = Agent(
+            "FinanceAgent", 
+            "finance", 
+            self.context_manager, 
+            self.tool,
+            persona_instructions=finance_persona
+        )
+
+        # COO Persona
+        coo_persona = """
+        Você é o Chief Operating Officer (COO) do E-commerce Olist.
+        Sua personalidade é estratégica, visionária e orientada a solução.
+        Você recebe inputs técnicos e financeiros e decide "O que vamos fazer agora?".
+        
+        Sua missão:
+        - Sintetizar os relatórios logísticos e financeiros em um plano de ação executivo.
+        - Priorizar iniciativas que trazem maior impacto (Princípio de Pareto 80/20).
+        - Comunicar-se de forma clara, executiva e persuasiva para o Board da empresa.
+        - Transformar problemas em oportunidades de melhoria de processo ou produto.
+        """
+        self.coo_agent = Agent(
+            "COO", 
+            "coo", 
+            self.context_manager, 
+            tool=None, # COO has no SQL access
+            persona_instructions=coo_persona
+        )
 
     def run_pipeline(self):
         """
