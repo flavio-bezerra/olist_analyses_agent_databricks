@@ -56,17 +56,18 @@ class Orchestrator:
             "logistics": {
                 "model": "databricks-meta-llama-3-3-70b-instruct",
                 "temperature": 0.1,
-                "max_tokens": 6000
+                "max_tokens": 8000
             },
             "finance": {
+
                 "model": "databricks-meta-llama-3-1-405b-instruct",
                 "temperature": 0.1,
                 "max_tokens": 4000
             },
             "coo": {
-                "model": "databricks-meta-llama-3-1-405b-instruct",
-                "temperature": 0.5, # Higher temp for more natural & strategic writing
-                "max_tokens": 4000  # COO needs more space for detailed strategy
+                "model": "databricks-qwen3-next-80b-a3b-instruct",
+                "temperature": 0.7, # Higher temp for more natural & strategic writing
+                "max_tokens": 20000  # COO needs more space for detailed strategy
             }
         }
 
@@ -166,14 +167,14 @@ MISSÃO ESTRATÉGICA: Garantir que cada real gasto gere retorno mensurável. Mar
 
 ⚠️ REGRAS ABSOLUTAS:
 1. NUNCA TOQUE EM `olist_cx.order_reviews`: Tabela não estruturada, causa falhas. Ignorar completamente.
-2. FOCO EM DINHEIRO REAL: Use apenas tabelas com dados transacionais (nomes COMPLETOS do catálogo):  
-   - `olist_dataset.olist_sales.order_items` (price, freight_value, product_id)  
-   - `olist_dataset.olist_finance.order_payments` (payment_value, installments)  
-   - `olist_dataset.olist_sales.orders` (datas de aprovação e entrega)  
+2. FOCO EM DINHEIRO REAL: Use apenas tabelas com dados transacionais:  
+   - `olist_order_items` (price, freight_value, product_id)  
+   - `olist_order_payments` (payment_value, installments)  
+   - `olist_orders` (datas de aprovação e entrega)  
    - `marketing.cac_by_channel_q3_2025` (CAC por origem)
 3. SEM ABSTRAÇÕES: Não fale de “engajamento” ou “fidelização”. Mostre perda de caixa.
 4. UMA QUERY POR VEZ: Sem múltiplos comandos. Erro? Corrija sintaxe.
-5. DATAS SPARK: Subtração direta de datas gera erro. Use SEMPRE `datediff(data_fim, data_inicio)` para diferença em dias.
+5. DATA REAL: Para pedidos não entregues, use `NOW()` como referência para cálculo de cycle time.
 
 ANÁLISE EXIGIDA:
 - Calcule Revenue at Risk por região, categoria e canal de aquisição.
@@ -260,9 +261,9 @@ FORMATO DE RESPOSTA (Executivo de Alta Consequência):
    - Ex: “Reduzir atrasos >2 dias em CEPs críticos de 41% para ≤18% em 60 dias, mantendo CAC ≤ R$ 45 e EBITDA ≥ 38%.”
 
 5. 🧩 TIPO DE DECISÃO (Classifique)
-   - [ ] Tática (curto prazo)  
-   - [x] Estratégica (médio/longo prazo)  
-   - [ ] Transformacional (muda modelo de operação) 
+   - ⚫ Tática (curto prazo)  
+   - ✅ Estratégica (médio/longo prazo)  
+   - ⚫ Transformacional (muda modelo de operação) 
         """
         self.coo_agent = Agent(
             "COO", 
