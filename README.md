@@ -5,7 +5,7 @@ Este projeto implementa uma arquitetura de Agentes de Dados utilizando Spark/Dat
 ## Estrutura
 
 - **Data Mesh (Camada de Dados):** Cria 4 bancos de dados lógicos (`olist_sales`, `olist_logistics`, `olist_finance`, `olist_cx`) a partir dos CSVs.
-- **SparkSQLTool (Camada de Conexão):** Ferramenta segura para execução de SQL com higienização, travas de volumetria e auto-cura.
+- **SparkSQLTool (Camada de Conexão):** Ferramenta segura para execução de SQL com higienização, travas de volumetria (limite padrão de 200 linhas) e auto-cura.
 - **ContextManager (Camada de Contexto):** Injeção dinâmica de schemas nos prompts dos agentes baseada no domínio.
 - **Orquestrador (Camada de Agentes):** Execução sequencial: Logística -> Finanças -> COO.
 
@@ -30,7 +30,14 @@ O sistema utiliza agentes com personalidades assertivas e papéis bem definidos 
 
 ## Configuração
 
-1. **Ambiente (Recomendado):**
+1. **Variáveis de Ambiente:**
+   Como o sistema utiliza modelos hospedados no Databricks, você precisa configurar as credenciais de acesso:
+   - `DATABRICKS_HOST`: URL do seu workspace Databricks.
+   - `DATABRICKS_TOKEN`: Seu Personal Access Token (PAT).
+
+   Você pode defini-las no seu terminal ou criar um arquivo `.env` (se estiver usando python-dotenv, não incluído por padrão).
+
+2. **Ambiente Python (Recomendado):**
    Crie um ambiente Conda estável usando o arquivo `environment.yml` fornecido:
    ```bash
    conda env create -f environment.yml
@@ -43,7 +50,7 @@ O sistema utiliza agentes com personalidades assertivas e papéis bem definidos 
    ```
    *Nota: Java 8/11 é necessário para o PySpark.*
 
-2. **Dados:**
+3. **Dados:**
    Crie uma pasta chamada `data` na raiz e adicione os seguintes arquivos do Dataset Olist:
    - `olist_orders_dataset.csv`
    - `olist_order_items_dataset.csv`
