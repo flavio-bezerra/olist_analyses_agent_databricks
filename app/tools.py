@@ -40,7 +40,7 @@ class SparkSQLTool:
             query (str): A string da consulta SQL bruta para executar.
 
         Saídas:
-            str: Os resultados da consulta (top 20 linhas) como uma string, ou uma mensagem de erro
+            str: Os resultados da consulta como uma string, ou uma mensagem de erro
                  começando com "ERROR:".
         """
         # 1. Higienização (Sanitization)
@@ -57,7 +57,7 @@ class SparkSQLTool:
             
             # Using toPandas() as requested/suggested by user for easier string formatting for the LLM
             # outputting a limited string representation to not blow up context
-            return df.limit(20).toPandas().to_string() 
+            return df.toPandas().to_string() 
         
         except AnalysisException as e:
             # 3. Trava de Auto-Cura (Self-Healing)
@@ -87,7 +87,7 @@ class SparkSQLTool:
             query = query[:-1].strip()
         return query
 
-    def _enforce_limit(self, query, default_limit=10):
+    def _enforce_limit(self, query, default_limit=200):
         """
         Garante que a consulta contenha uma cláusula LIMIT.
 
@@ -96,7 +96,7 @@ class SparkSQLTool:
 
         Entradas:
             query (str): A string da consulta SQL limpa.
-            default_limit (int, opcional): O limite de linhas a adicionar se estiver faltando. Padrão é 10.
+            default_limit (int, opcional): O limite de linhas a adicionar se estiver faltando. Padrão é 200.
 
         Saídas:
             str: A string da consulta com uma cláusula LIMIT aplicada.
