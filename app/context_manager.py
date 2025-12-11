@@ -62,50 +62,66 @@ class ContextManager:
         domains = self.role_domains[agent_role]
         context_str = f"Specific Data Context for {agent_role.capitalize()} Agent:\n"
 
+        input_schema_patterns = []
         for domain in domains:
-            try:
-                print(f"Loading schema for domain: {domain}")
-                tables_df = self.spark.sql(f"SHOW TABLES IN {domain}").limit(100)
-                pdf_tables = tables_df.toPandas()
+            # domain is like "olist_dataset.olist_sales" -> schema "olist_sales"
+            schema_name = domain.split('.')[-1]
+            input_schema_patterns.append(f"'{schema_name}'")
+        
+        allowed_schemas_str = ", ".join(input_schema_patterns)
+        
+        # User requested query structure optimized for specific schemas
+        query = f"""
+        SELECT 
+          t.table_schema as nome_do_schema,
+          t.table_name as nome_da_tabela,
+          t.comment as comentario_da_tabela,
+          c.column_name as nome_da_coluna,
+          c.data_type as tipo_da_coluna,
+          c.comment as comentario_da_coluna
+        FROM {self.catalog}.information_schema.tables t
+        LEFT JOIN {self.catalog}.information_schema.columns c
+          ON t.table_catalog = c.table_catalog
+          AND t.table_schema = c.table_schema
+          AND t.table_name = c.table_name
+        WHERE t.table_schema IN ({allowed_schemas_str})
+        ORDER BY t.table_schema, t.table_name, c.ordinal_position
+        """
 
-                for index, row in pdf_tables.iterrows():
-                    t_name = row['tableName']
-                    full_table_name = f"{domain}.{t_name}"
-
-                    # Buscar comentário da tabela
-                    table_comment = ""
-                    try:
-                        table_info_df = self.spark.sql(
-                            f"SELECT comment FROM {self.catalog}.information_schema.tables WHERE table_catalog='{self.catalog}' AND table_schema='{domain.split('.')[-1]}' AND table_name='{t_name}'"
-                        )
-                        table_info = table_info_df.toPandas()
-                        if not table_info.empty and table_info.loc[0, "comment"]:
-                            table_comment = table_info.loc[0, "comment"]
-                    except Exception as e:
-                        table_comment = f"Erro ao buscar comentário da tabela: {e}"
-
+        try:
+            print(f"Loading schema context with single query for {agent_role}...")
+            schema_df = self.spark.sql(query).toPandas()
+            
+            current_table = None
+            
+            for index, row in schema_df.iterrows():
+                # Construct full table name
+                table_schema = row['nome_do_schema']
+                table_name = row['nome_da_tabela']
+                full_table_name = f"{self.catalog}.{table_schema}.{table_name}"
+                
+                # If we encountered a new table, print its header info
+                if full_table_name != current_table:
+                    current_table = full_table_name
+                    table_comment = row['comentario_da_tabela']
+                    
                     context_str += f"\nTable: {full_table_name}\n"
                     if table_comment:
                         context_str += f"Definition: {table_comment}\n"
                     context_str += "Columns:\n"
+                
+                # Add column info
+                col_name = row['nome_da_coluna']
+                col_type = row['tipo_da_coluna']
+                col_comment = row['comentario_da_coluna']
+                
+                context_str += f" - {col_name} ({col_type})"
+                if col_comment:
+                    context_str += f": {col_comment}"
+                context_str += "\n"
 
-                    # Buscar colunas e comentários
-                    columns_df = self.spark.sql(
-                        f"SELECT column_name, data_type, comment FROM {self.catalog}.information_schema.columns WHERE table_catalog='{self.catalog}' AND table_schema='{domain.split('.')[-1]}' AND table_name='{t_name}'"
-                    )
-                    pdf_columns = columns_df.toPandas()
-
-                    for idx, col in pdf_columns.iterrows():
-                        col_name = col["column_name"]
-                        data_type = col["data_type"]
-                        col_comment = col["comment"] if col["comment"] else ""
-                        context_str += f" - {col_name} ({data_type})"
-                        if col_comment:
-                            context_str += f": {col_comment}"
-                        context_str += "\n"
-
-            except Exception as e:
-                print(f"Error loading schema for {domain}: {e}")
-                context_str += f"\nCould not retrieve schema for domain {domain}: {str(e)}\n"
+        except Exception as e:
+            print(f"Error executing schema query: {e}")
+            context_str += f"\nCould not retrieve schema context: {str(e)}\n"
 
         return context_str
