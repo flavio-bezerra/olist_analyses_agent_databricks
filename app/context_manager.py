@@ -62,15 +62,9 @@ class ContextManager:
         domains = self.role_domains[agent_role]
         context_str = f"Specific Data Context for {agent_role.capitalize()} Agent:\n"
 
-        input_schema_patterns = []
-        for domain in domains:
-            # domain is like "olist_dataset.olist_sales" -> schema "olist_sales"
-            schema_name = domain.split('.')[-1]
-            input_schema_patterns.append(f"'{schema_name}'")
+        # User suggested strategy: Query everything matching 'olist%' to ensure full visibility and minimize errors
+        # This replaces strict RBAC with full visibility for the agents, preventing "Table not found" when joining across domains (e.g. Finance joining Orders).
         
-        allowed_schemas_str = ", ".join(input_schema_patterns)
-        
-        # User requested query structure optimized for specific schemas
         query = f"""
         SELECT 
           t.table_schema as nome_do_schema,
@@ -84,7 +78,7 @@ class ContextManager:
           ON t.table_catalog = c.table_catalog
           AND t.table_schema = c.table_schema
           AND t.table_name = c.table_name
-        WHERE t.table_schema IN ({allowed_schemas_str})
+        WHERE t.table_schema LIKE 'olist%'
         ORDER BY t.table_schema, t.table_name, c.ordinal_position
         """
 

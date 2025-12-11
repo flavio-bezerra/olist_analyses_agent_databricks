@@ -269,7 +269,10 @@ class Agent:
             
         # 3. Adiciona Schema de Dados se disponível
         if schema_context:
-            base_prompt += f"\n\n### MAPA DE DADOS (SCHEMA DISPONÍVEL):\n{schema_context}"
+            base_prompt += f"\n\n### MAPA DE DADOS (CRUCIAL PARA EVITAR ERROS):\n" \
+                           f"ATENÇÃO: Use SOMENTE as tabelas e colunas listadas abaixo. Respeite os tipos de dados (Data Type).\n" \
+                           f"O SQL deve ser compatível com SparkSQL.\n\n" \
+                           f"{schema_context}"
             
         return base_prompt
 
