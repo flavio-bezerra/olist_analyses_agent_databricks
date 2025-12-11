@@ -44,6 +44,28 @@ class Orchestrator:
         self.tool = SparkSQLTool(self.spark)
         self.context_manager = ContextManager(self.spark)
 
+        # Configuration: Model & Temperature Selection per Agent
+        # Adjust these parameters based on performance/cost/creativity needs.
+        # Options: 
+        # - 'databricks-meta-llama-3-3-70b-instruct' (Balanced)
+        # - 'databricks-meta-llama-3-1-405b-instruct' (Smartest/Slowest)
+        # - 'databricks-llama-4-maverick' (Preview)
+        # Temperature: 0.0-0.2 (Analytical) | 0.5-0.7 (Creative/Strategic)
+        self.agent_config = {
+            "logistics": {
+                "model": "databricks-meta-llama-3-3-70b-instruct",
+                "temperature": 0.1
+            },
+            "finance": {
+                "model": "databricks-meta-llama-3-1-405b-instruct",
+                "temperature": 0.1
+            },
+            "coo": {
+                "model": "databricks-meta-llama-3-1-405b-instruct",
+                "temperature": 0.5 # Higher temp for more natural & strategic writing
+            }
+        }
+
         # 3. Initialize Agents with Assertive Personas
         
         # Logistics Persona
@@ -63,7 +85,9 @@ class Orchestrator:
             "logistics", 
             self.context_manager, 
             self.tool,
-            persona_instructions=logistics_persona
+            persona_instructions=logistics_persona,
+            model_name=self.agent_config["logistics"]["model"],
+            temperature=self.agent_config["logistics"]["temperature"]
         )
 
         # Finance Persona
@@ -83,7 +107,9 @@ class Orchestrator:
             "finance", 
             self.context_manager, 
             self.tool,
-            persona_instructions=finance_persona
+            persona_instructions=finance_persona,
+            model_name=self.agent_config["finance"]["model"],
+            temperature=self.agent_config["finance"]["temperature"]
         )
 
         # COO Persona
@@ -103,7 +129,9 @@ class Orchestrator:
             "coo", 
             self.context_manager, 
             tool=None, # COO has no SQL access
-            persona_instructions=coo_persona
+            persona_instructions=coo_persona,
+            model_name=self.agent_config["coo"]["model"],
+            temperature=self.agent_config["coo"]["temperature"]
         )
 
     def run_pipeline(self):
